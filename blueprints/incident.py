@@ -1,10 +1,13 @@
 from typing import Any
 
+from dependency_injector.wiring import Provide
 from flask import Blueprint, Response
 from flask.views import MethodView
 
 import demo
+from containers import Container
 from models import HistoryEntry, Incident
+from repositories import UserRepository
 
 from .util import class_route, json_response
 
@@ -47,14 +50,24 @@ class UserIncidents(MethodView):
 class EmployeeIncidents(MethodView):
     init_every_request = False
 
-    def incident_to_dict(self, incident: Incident, history: list[HistoryEntry]) -> dict[str, Any]:
+    def incident_to_dict(
+        self,
+        incident: Incident,
+        history: list[HistoryEntry],
+        user_repo: UserRepository = Provide[Container.user_repo],
+    ) -> dict[str, Any]:
+        user_reported_by = user_repo.get(incident.reported_by, incident.client_id)
+
+        if user_reported_by is None:
+            raise ValueError(f'User {incident.reported_by} not found')
+
         return {
             'id': incident.id,
             'name': incident.name,
             'reportedBy': {
-                'id': incident.reported_by,
-                'name': 'María Fernanda Gómez',
-                'email': 'maria.gomez@example.com',
+                'id': user_reported_by.id,
+                'name': user_reported_by.name,
+                'email': user_reported_by.email,
             },
             'filingDate': history[0].date.isoformat().replace('+00:00', 'Z'),
             'status': history[-1].action,

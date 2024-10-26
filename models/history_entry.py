@@ -7,6 +7,7 @@ from .action import Action
 @dataclass
 class HistoryEntry:
     incident_id: str
+    client_id: str
     seq: int
     date: datetime
     action: Action

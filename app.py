@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask
-from gcp_microservice_utils import setup_apigateway, setup_cloud_logging, setup_cloud_trace
+from gcp_microservice_utils import GcpAuthToken, setup_apigateway, setup_cloud_logging, setup_cloud_trace
 
 from blueprints import BlueprintHealth, BlueprintIncident
 from containers import Container
@@ -25,6 +25,16 @@ def create_app() -> FlaskMicroservice:
 
         _, project_id = google.auth.default()  # type: ignore[no-untyped-call]
         app.container.config.project_id.from_value(project_id)
+
+    if 'USER_SVC_URL' in os.environ:  # pragma: no cover
+        app.container.config.svc.user.url.from_env('USER_SVC_URL')
+
+        if 'USER_SVC_TOKEN' in os.environ:
+            app.container.config.svc.user.token_provider.from_value(
+                type('TokenProvider', (object,), {'get_token': lambda: os.environ['USER_SVC_TOKEN']})
+            )
+        elif 'USE_CLOUD_TOKEN_PROVIDER' in os.environ:
+            app.container.config.svc.user.token_provider.from_value(GcpAuthToken(os.environ['USER_SVC_URL']))
 
     if os.getenv('ENABLE_CLOUD_TRACE') == '1':
         setup_cloud_trace(app)  # pragma: no cover

@@ -37,6 +37,16 @@ resource "google_cloud_run_v2_service" "default" {
         value = local.database_name
       }
 
+      env {
+        name = "USE_CLOUD_TOKEN_PROVIDER"
+        value = "1"
+      }
+
+      env {
+        name = "USER_SVC_URL"
+        value = "https://user-${data.google_project.default.number}.${local.region}.run.app"
+      }
+
       startup_probe {
         http_get {
           path = "/api/v1/health/${local.service_name}"

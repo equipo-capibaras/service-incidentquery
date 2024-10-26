@@ -2,8 +2,11 @@ from datetime import UTC, datetime
 
 from models import Action, Channel, HistoryEntry, Incident
 
+CLIENT_ID_GIGATEL = '9a652818-342e-4771-84cf-39c20a29264d'
+
 incident1 = Incident(
     id='36e3344d-aa5b-4c5a-88ef-a7eb8abe27d8',
+    client_id=CLIENT_ID_GIGATEL,
     name='Cobro incorrecto',
     channel=Channel.WEB,
     reported_by='b713f559-cae5-4db3-992a-d3553fb25000',
@@ -14,6 +17,7 @@ incident1 = Incident(
 incident1_history = [
     HistoryEntry(
         incident_id=incident1.id,
+        client_id=CLIENT_ID_GIGATEL,
         seq=0,
         date=datetime(2024, 10, 18, 14, 26, 22, tzinfo=UTC),
         action=Action.CREATED,
@@ -26,6 +30,7 @@ incident1_history = [
     ),
     HistoryEntry(
         incident_id=incident1.id,
+        client_id=CLIENT_ID_GIGATEL,
         seq=1,
         date=datetime(2024, 10, 18, 17, 31, 57, tzinfo=UTC),
         action=Action.CLOSED,
@@ -35,6 +40,7 @@ incident1_history = [
 
 incident2 = Incident(
     id='eccc588b-df31-4105-9940-86937059aff8',
+    client_id=CLIENT_ID_GIGATEL,
     name='Internet no funciona',
     channel=Channel.MOBILE,
     reported_by='b713f559-cae5-4db3-992a-d3553fb25000',
@@ -45,6 +51,7 @@ incident2 = Incident(
 incident2_history = [
     HistoryEntry(
         incident_id=incident2.id,
+        client_id=CLIENT_ID_GIGATEL,
         seq=0,
         date=datetime(2024, 10, 20, 14, 26, 22, tzinfo=UTC),
         action=Action.CREATED,
@@ -56,6 +63,7 @@ incident2_history = [
     ),
     HistoryEntry(
         incident_id=incident2.id,
+        client_id=CLIENT_ID_GIGATEL,
         seq=1,
         date=datetime(2024, 10, 21, 8, 11, 41, tzinfo=UTC),
         action=Action.ESCALATED,
@@ -69,6 +77,7 @@ incident2_history = [
 
 incident3 = Incident(
     id='8b51a60c-07d3-4ed3-85b9-352ded0abec5',
+    client_id=CLIENT_ID_GIGATEL,
     name='Fallo servicios',
     channel=Channel.EMAIL,
     reported_by='b713f559-cae5-4db3-992a-d3553fb25000',
@@ -79,6 +88,7 @@ incident3 = Incident(
 incident3_history = [
     HistoryEntry(
         incident_id=incident3.id,
+        client_id=CLIENT_ID_GIGATEL,
         seq=0,
         date=datetime(2024, 10, 23, 19, 46, 40, tzinfo=UTC),
         action=Action.CREATED,
