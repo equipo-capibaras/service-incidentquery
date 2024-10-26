@@ -6,6 +6,9 @@ incident1 = Incident(
     id='36e3344d-aa5b-4c5a-88ef-a7eb8abe27d8',
     name='Cobro incorrecto',
     channel=Channel.WEB,
+    reported_by='b713f559-cae5-4db3-992a-d3553fb25000',
+    created_by='0abad006-921c-4e09-b2a6-10713b71571f',
+    assigned_to='0abad006-921c-4e09-b2a6-10713b71571f',
 )
 
 incident1_history = [
@@ -34,6 +37,9 @@ incident2 = Incident(
     id='eccc588b-df31-4105-9940-86937059aff8',
     name='Internet no funciona',
     channel=Channel.MOBILE,
+    reported_by='b713f559-cae5-4db3-992a-d3553fb25000',
+    created_by='b713f559-cae5-4db3-992a-d3553fb25000',
+    assigned_to='0abad006-921c-4e09-b2a6-10713b71571f',
 )
 
 incident2_history = [
@@ -65,6 +71,9 @@ incident3 = Incident(
     id='8b51a60c-07d3-4ed3-85b9-352ded0abec5',
     name='Fallo servicios',
     channel=Channel.EMAIL,
+    reported_by='b713f559-cae5-4db3-992a-d3553fb25000',
+    created_by='b713f559-cae5-4db3-992a-d3553fb25000',
+    assigned_to='0abad006-921c-4e09-b2a6-10713b71571f',
 )
 
 incident3_history = [

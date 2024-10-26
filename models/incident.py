@@ -8,3 +8,6 @@ class Incident:
     id: str
     name: str
     channel: Channel
+    reported_by: str
+    created_by: str
+    assigned_to: str
