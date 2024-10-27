@@ -10,7 +10,7 @@ from faker import Faker
 from google.api_core.exceptions import AlreadyExists
 from google.cloud.firestore import Client as FirestoreClient  # type: ignore[import-untyped]
 from google.cloud.firestore_v1 import CollectionReference
-from unittest_parametrize import ParametrizedTestCase
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from models import HistoryEntry, Incident
 from repositories.firestore import FirestoreIncidentRepository
@@ -33,12 +33,16 @@ class TestClient(ParametrizedTestCase):
         self.repo = FirestoreIncidentRepository(FIRESTORE_DATABASE)
         self.client = FirestoreClient(database=FIRESTORE_DATABASE)
 
-    def add_random_incidents(self, n: int, client_id: str | None = None, reported_by: str | None = None) -> list[Incident]:
+    def add_random_incidents(
+        self, n: int, client_id: str | None = None, reported_by: str | None = None, assigned_to: str | None = None
+    ) -> list[Incident]:
         incidents: list[Incident] = []
 
         # Add n incidents to Firestore
         for _ in range(n):
-            incident = create_random_incident(self.faker, client_id=client_id, reported_by=reported_by)
+            incident = create_random_incident(
+                self.faker, client_id=client_id, reported_by=reported_by, assigned_to=assigned_to
+            )
 
             incidents.append(incident)
             incident_dict = asdict(incident)
@@ -77,18 +81,64 @@ class TestClient(ParametrizedTestCase):
 
         return entries
 
-    def test_get_all_by_reporter(self) -> None:
+    @parametrize(
+        ['field', 'offset', 'limit'],
+        [
+            ('reported_by', None, None),
+            ('reported_by', None, 3),
+            ('reported_by', 2, None),
+            ('reported_by', 2, 2),
+            ('assigned_to', None, None),
+            ('assigned_to', None, 3),
+            ('assigned_to', 2, None),
+            ('assigned_to', 2, 2),
+        ],
+    )
+    def test_get_all_by_field(self, field: str, offset: int | None, limit: int | None) -> None:
         client_id = cast(str, self.faker.uuid4())
         reporter_id = cast(str, self.faker.uuid4())
+        assignee_id = cast(str, self.faker.uuid4())
 
         self.add_random_incidents(3, client_id=client_id)
-        incidents = self.add_random_incidents(3, client_id=client_id, reported_by=reporter_id)
+        incidents = self.add_random_incidents(5, client_id=client_id, reported_by=reporter_id, assigned_to=assignee_id)
 
-        result = list(self.repo.get_all_by_reporter(client_id=client_id, reporter_id=reporter_id))
+        if field == 'reported_by':
+            result = list(
+                self.repo.get_all_by_reporter(client_id=client_id, reporter_id=reporter_id, offset=offset, limit=limit)
+            )
+        else:
+            result = list(
+                self.repo.get_all_by_assignee(client_id=client_id, assignee_id=assignee_id, offset=offset, limit=limit)
+            )
 
         incidents.sort(key=lambda i: i.last_modified, reverse=True)  # type: ignore[attr-defined]
 
+        if offset is not None:
+            incidents = incidents[offset:]
+
+        if limit is not None:
+            incidents = incidents[:limit]
+
         self.assertEqual(result, incidents)
+
+    @parametrize(
+        'field',
+        [
+            ('assigned_to',),
+        ],
+    )
+    def test_count_by_field(self, field: str) -> None:
+        client_id = cast(str, self.faker.uuid4())
+        reporter_id = cast(str, self.faker.uuid4())
+        assignee_id = cast(str, self.faker.uuid4())
+
+        self.add_random_incidents(3, client_id=client_id)
+        incidents = self.add_random_incidents(3, client_id=client_id, reported_by=reporter_id, assigned_to=assignee_id)
+
+        if field == 'assigned_to':
+            result = self.repo.count_by_assignee(client_id=client_id, assignee_id=assignee_id)
+
+        self.assertEqual(result, len(incidents))
 
     def test_get_history(self) -> None:
         client_id = cast(str, self.faker.uuid4())
