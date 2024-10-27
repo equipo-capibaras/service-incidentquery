@@ -7,9 +7,9 @@ from flask.views import MethodView
 import demo
 from containers import Container
 from models import HistoryEntry, Incident
-from repositories import UserRepository
+from repositories import IncidentRepository, UserRepository
 
-from .util import class_route, json_response
+from .util import class_route, json_response, requires_token
 
 blp = Blueprint('Incidents', __name__)
 
@@ -33,17 +33,25 @@ class UserIncidents(MethodView):
             'description': entry.description,
         }
 
-    def get(self) -> Response:
-        i1 = self.incident_to_dict(demo.incident1)
-        i1['history'] = [self.history_to_dict(x) for x in demo.incident1_history]
+    @requires_token
+    def get(
+        self,
+        token: dict[str, Any],
+        incident_repo: IncidentRepository = Provide[Container.incident_repo],
+    ) -> Response:
+        incidents = incident_repo.get_all_by_reporter(
+            client_id=token['cid'],
+            reporter_id=token['sub'],
+        )
 
-        i2 = self.incident_to_dict(demo.incident2)
-        i2['history'] = [self.history_to_dict(x) for x in demo.incident2_history]
+        resp: list[dict[str, Any]] = []
+        for incident in incidents:
+            incident_dict = self.incident_to_dict(incident)
+            history = incident_repo.get_history(client_id=incident.client_id, incident_id=incident.id)
+            incident_dict['history'] = [self.history_to_dict(x) for x in history]
+            resp.append(incident_dict)
 
-        i3 = self.incident_to_dict(demo.incident3)
-        i3['history'] = [self.history_to_dict(x) for x in demo.incident3_history]
-
-        return json_response([i3, i2, i1], 200)
+        return json_response(resp, 200)
 
 
 @class_route(blp, '/api/v1/employees/me/incidents')
