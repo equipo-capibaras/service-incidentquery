@@ -8,7 +8,7 @@ from .action import Action
 class HistoryEntry:
     incident_id: str
     client_id: str
-    seq: int
     date: datetime
     action: Action
     description: str
+    seq: int
