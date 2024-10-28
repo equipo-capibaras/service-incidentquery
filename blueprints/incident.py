@@ -1,4 +1,6 @@
-from typing import Any
+from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
+from typing import Any, cast
 
 from dependency_injector.wiring import Provide
 from flask import Blueprint, Response, request
@@ -112,13 +114,21 @@ class EmployeeIncidents(MethodView):
             limit=page_size,
         )
 
-        incidents_dict = [
-            self.incident_to_dict(
-                incident,
-                list(incident_repo.get_history(client_id=token['cid'], incident_id=incident.id)),
-            )
-            for incident in incidents
-        ]
+        with ThreadPoolExecutor() as executor:
+            incidents_futures: list[Future[dict[str, Any]]] = [
+                executor.submit(
+                    cast(
+                        Callable[[Incident], dict[str, Any]],
+                        lambda incident: self.incident_to_dict(
+                            incident, list(incident_repo.get_history(client_id=token['cid'], incident_id=incident.id))
+                        ),
+                    ),
+                    incident,
+                )
+                for incident in incidents
+            ]
+
+        incidents_dict = [x.result() for x in incidents_futures]
 
         data = {
             'incidents': incidents_dict,
