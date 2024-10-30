@@ -150,3 +150,20 @@ class TestClient(ParametrizedTestCase):
         result = list(self.repo.get_history(client_id=client_id, incident_id=incident.id))
 
         self.assertEqual(result, entries)
+
+    def test_get_existing(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        incident = self.add_random_incidents(1, client_id=client_id)[0]
+
+        result = self.repo.get(client_id=client_id, incident_id=incident.id)
+
+        self.assertEqual(result, incident)
+
+    def test_get_not_found(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+        incident_id = cast(str, self.faker.uuid4())
+
+        result = self.repo.get(client_id=client_id, incident_id=incident_id)
+
+        self.assertIsNone(result)
