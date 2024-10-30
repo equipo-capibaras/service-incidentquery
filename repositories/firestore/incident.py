@@ -44,6 +44,16 @@ class FirestoreIncidentRepository(IncidentRepository):
             config=dacite.Config(cast=[Enum]),
         )
 
+    def get(self, client_id: str, incident_id: str) -> Incident | None:
+        client_ref = self.db.collection('clients').document(client_id)
+        incident_ref = cast(CollectionReference, client_ref.collection('incidents')).document(incident_id)
+        doc = incident_ref.get()
+
+        if not doc.exists:
+            return None
+
+        return self.doc_to_incident(doc)
+
     def _query_by_field(self, client_id: str, field: str, value: str) -> Query:
         client_ref = self.db.collection('clients').document(client_id)
         incidents_ref = cast(CollectionReference, client_ref.collection('incidents'))
