@@ -239,6 +239,28 @@ class TestIncident(ParametrizedTestCase):
 
         self.assertEqual(resp_data, {'code': 404, 'message': 'Incident not found.'})
 
+    def _employee_repo_mock_get(
+        self, employee_id: str, missing: str | None, employee_assigned_to: Employee, employee_created_by: Employee | None
+    ) -> Employee | None:
+        if employee_id == employee_assigned_to.id and missing != 'assigned_to':
+            return employee_assigned_to
+
+        if employee_created_by is not None and employee_id == employee_created_by.id and missing != 'created_by':
+            return employee_created_by
+
+        return None
+
+    def _user_repo_mock_get(
+        self, user_id: str, missing: str | None, user_reported_by: User, user_created_by: User | None
+    ) -> User | None:
+        if user_id == user_reported_by.id and missing != 'reported_by':
+            return user_reported_by
+
+        if user_created_by is not None and user_id == user_created_by.id and missing != 'created_by':
+            return user_created_by
+
+        return None
+
     @parametrize(
         ['created_by', 'missing'],
         [
@@ -310,20 +332,13 @@ class TestIncident(ParametrizedTestCase):
         ]
 
         user_repo_mock = Mock(UserRepository)
-        cast(Mock, user_repo_mock.get).side_effect = (
-            lambda user_id, client_id: user_created_by  # noqa: ARG005
-            if user_id == user_created_by.id and created_by == 'user' and missing != 'created_by'
-            else user_reported_by
-            if user_id == user_reported_by.id and missing != 'reported_by'
-            else None
+        cast(Mock, user_repo_mock.get).side_effect = lambda user_id, client_id: self._user_repo_mock_get(  # noqa: ARG005
+            user_id, missing, user_reported_by, user_created_by if created_by == 'user' else None
         )
+
         employee_repo_mock = Mock(EmployeeRepository)
-        cast(Mock, employee_repo_mock.get).side_effect = (
-            lambda employee_id, client_id: employee_created_by  # noqa: ARG005
-            if employee_id == employee_created_by.id and created_by == 'agent' and missing != 'created_by'
-            else employee_assigned_to
-            if employee_id == employee_assigned_to.id and missing != 'assigned_to'
-            else None
+        cast(Mock, employee_repo_mock.get).side_effect = lambda employee_id, client_id: self._employee_repo_mock_get(  # noqa: ARG005
+            employee_id, missing, employee_assigned_to, employee_created_by if created_by == 'agent' else None
         )
 
         incident_repo_mock = Mock(IncidentRepository)
