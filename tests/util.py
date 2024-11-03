@@ -7,7 +7,12 @@ from models import Action, Channel, HistoryEntry, Incident
 
 
 def create_random_incident(
-    faker: Faker, *, client_id: str | None = None, reported_by: str | None = None, assigned_to: str | None = None
+    faker: Faker,
+    *,
+    client_id: str | None = None,
+    reported_by: str | None = None,
+    created_by: str | None = None,
+    assigned_to: str | None = None,
 ) -> Incident:
     return Incident(
         id=cast(str, faker.uuid4()),
@@ -15,7 +20,7 @@ def create_random_incident(
         name=faker.sentence(3),
         channel=faker.random_element(list(Channel)),
         reported_by=reported_by or cast(str, faker.uuid4()),
-        created_by=cast(str, faker.uuid4()),
+        created_by=created_by or cast(str, faker.uuid4()),
         assigned_to=assigned_to or cast(str, faker.uuid4()),
     )
 
