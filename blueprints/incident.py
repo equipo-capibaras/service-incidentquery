@@ -221,10 +221,26 @@ class IncidentsByClient(MethodView):
     def get(
         self,
         client_id: str,
+        incident_repo: IncidentRepository = Provide[Container.incident_repo],
         client_repo: ClientRepository = Provide[Container.client_repo],
     ) -> Response:
         client = client_repo.get(client_id)
         if client is None:
             return error_response('Client not found.', 404)
 
-        return json_response({'status': 'Ok', 'code': 200}, 200)
+        incidents = incident_repo.get_all_by_client(client_id)
+        resp = []
+        for incident in incidents:
+            history = incident_repo.get_history(client_id=client_id, incident_id=incident.id)
+            incident_dict = {
+                'id': incident.id,
+                'name': incident.name,
+                'channel': incident.channel,
+                'reported_by': incident.reported_by,
+                'created_by': incident.created_by,
+                'assigned_to': incident.assigned_to,
+                'history': [history_to_dict(entry) for entry in history],
+            }
+            resp.append(incident_dict)
+
+        return json_response(resp, 200)
