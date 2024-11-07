@@ -1,11 +1,12 @@
-from models import Client
-from repositories.client import ClientRepository
-from repositories.rest.base import RestBaseRepository
-
 from typing import Any, cast
 
 import dacite
 import requests
+
+from models import Client
+from repositories.client import ClientRepository
+from repositories.rest.base import RestBaseRepository
+
 from .util import TokenProvider
 
 
@@ -28,4 +29,4 @@ class RestClientRepository(ClientRepository, RestBaseRepository):
         if resp.status_code == requests.codes.not_found:
             return None
 
-        self.unexpected_error(resp)
+        self.unexpected_error(resp)  # noqa: RET503

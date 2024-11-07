@@ -219,20 +219,12 @@ class IncidentsByClient(MethodView):
     init_every_request = False
 
     def get(
-            self,
-            client_id: str,
-            incident_repo: IncidentRepository = Provide[Container.incident_repo],
-            client_repo: ClientRepository = Provide[Container.client_repo],
+        self,
+        client_id: str,
+        client_repo: ClientRepository = Provide[Container.client_repo],
     ) -> Response:
-        # TODO: Implementar a lógica para retornar os incidentes de un cliente
         client = client_repo.get(client_id)
         if client is None:
             return error_response('Client not found.', 404)
 
-        client_json = {
-            'id': client.id,
-            'name': client.name
-        }
-
-        return json_response(client_json, 200)
-
+        return json_response({'status': 'Ok', 'code': 200}, 200)
