@@ -6,5 +6,6 @@ from .incident import Incident
 from .invitation_status import InvitationStatus
 from .role import Role
 from .user import User
+from .client import Client
 
-__all__ = ['Action', 'Channel', 'Employee', 'HistoryEntry', 'Incident', 'InvitationStatus', 'Role', 'User']
+__all__ = ['Action', 'Channel', 'Employee', 'HistoryEntry', 'Incident', 'InvitationStatus', 'Role', 'User', 'Client']
