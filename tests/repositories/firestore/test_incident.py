@@ -167,3 +167,43 @@ class TestClient(ParametrizedTestCase):
         result = self.repo.get(client_id=client_id, incident_id=incident_id)
 
         self.assertIsNone(result)
+
+    def test_get_all_by_client(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        # Agregar incidentes aleatorios para el cliente especificado
+        incidents = self.add_random_incidents(5, client_id=client_id)
+
+        # Ordenar los incidentes por la fecha de última modificación, de manera descendente
+        incidents.sort(key=lambda i: i.last_modified, reverse=True)  # type: ignore[attr-defined]
+
+        # Llamar función get_all_by_client y verificar el resultado
+        result = list(self.repo.get_all_by_client(client_id=client_id))
+
+        # Comprobar que los incidentes obtenidos sean los esperados
+        self.assertEqual(result, incidents)
+
+    def test_get_all_by_client_no_incidents(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        # No agregamos incidentes para el cliente, esperamos una lista vacía
+        result = list(self.repo.get_all_by_client(client_id=client_id))
+
+        # Comprobar que el resultado sea una lista vacía
+        self.assertEqual(result, [])
+
+    @parametrize('incident_count', [(0,), (1,), (10,)])
+    def test_get_all_by_client_with_different_counts(self, incident_count: int) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        # Agregar incidentes aleatorios según el parámetro `incident_count`
+        incidents = self.add_random_incidents(incident_count, client_id=client_id)
+
+        # Ordenar los incidentes por la fecha de última modificación, de manera descendente
+        incidents.sort(key=lambda i: i.last_modified, reverse=True)  # type: ignore[attr-defined]
+
+        # Llamar función get_all_by_client y verificar el resultado
+        result = list(self.repo.get_all_by_client(client_id=client_id))
+
+        # Comprobar que el resultado coincida con el número de incidentes esperados
+        self.assertEqual(result, incidents)
