@@ -8,8 +8,9 @@ from unittest_parametrize import ParametrizedTestCase, parametrize
 from werkzeug.test import TestResponse
 
 from app import create_app
-from models import Employee, HistoryEntry, InvitationStatus, Role, User
+from models import Client, Employee, HistoryEntry, InvitationStatus, Role, User
 from repositories import EmployeeRepository, IncidentRepository, UserRepository
+from repositories.client import ClientRepository
 from tests.util import create_random_history_entry, create_random_incident
 
 from .util import gen_token
@@ -19,6 +20,7 @@ class TestIncident(ParametrizedTestCase):
     INCIDENT_API_USER_URL = '/api/v1/users/me/incidents'
     INCIDENT_API_EMPLOYEE_URL = '/api/v1/employees/me/incidents'
     INCIDENT_API_DETAIL_URL = '/api/v1/incidents/{incident_id}'
+    INCIDENTS_BY_CLIENT_URL = '/api/v1/clients/{client_id}/incidents'
 
     def setUp(self) -> None:
         self.faker = Faker()
@@ -58,6 +60,9 @@ class TestIncident(ParametrizedTestCase):
         return self.client.get(
             self.INCIDENT_API_DETAIL_URL.format(incident_id=incident_id), headers={'X-Apigateway-Api-Userinfo': token_encoded}
         )
+
+    def call_incidents_by_client(self, client_id: str) -> TestResponse:
+        return self.client.get(self.INCIDENTS_BY_CLIENT_URL.format(client_id=client_id))
 
     def test_user_incidents_no_token(self) -> None:
         resp = self.call_incident_api_user(None)
@@ -389,3 +394,98 @@ class TestIncident(ParametrizedTestCase):
         self.assertEqual(resp_data['assignedTo']['name'], employee_assigned_to.name)
         self.assertEqual(resp_data['assignedTo']['email'], employee_assigned_to.email)
         self.assertEqual(resp_data['assignedTo']['role'], 'agent')
+
+    def test_incidents_by_client_not_found(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        client_repo_mock = Mock(ClientRepository)
+        cast(Mock, client_repo_mock.get).return_value = None
+
+        with self.app.container.client_repo.override(client_repo_mock):
+            resp = self.call_incidents_by_client(client_id=client_id)
+
+        self.assertEqual(resp.status_code, 404)
+        resp_data = json.loads(resp.get_data())
+
+        self.assertEqual(resp_data, {'code': 404, 'message': 'Client not found.'})
+
+    def test_incidents_by_client_no_incidents(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        client_repo_mock = Mock(ClientRepository)
+        cast(Mock, client_repo_mock.get).return_value = Client(
+            id=client_id,
+            name=self.faker.company(),
+            email_incidents=self.faker.email(),
+        )
+
+        incident_repo_mock = Mock(IncidentRepository)
+        cast(Mock, incident_repo_mock.get_all_by_client).return_value = iter([])
+
+        with (
+            self.app.container.client_repo.override(client_repo_mock),
+            self.app.container.incident_repo.override(incident_repo_mock),
+        ):
+            resp = self.call_incidents_by_client(client_id)
+
+        self.assertEqual(resp.status_code, 200)
+        resp_data = json.loads(resp.get_data())
+
+        self.assertEqual(resp_data, [])
+
+    def test_incidents_by_client_with_incidents(self) -> None:
+        client_id = cast(str, self.faker.uuid4())
+
+        incidents = [create_random_incident(self.faker, client_id=client_id) for _ in range(3)]
+
+        incident_history: dict[str, list[HistoryEntry]] = {}
+
+        for incident in incidents:
+            incident_history[incident.id] = [
+                create_random_history_entry(self.faker, seq=i, client_id=incident.client_id, incident_id=incident.id)
+                for i in range(3)
+            ]
+
+        client_repo_mock = Mock(ClientRepository)
+        cast(Mock, client_repo_mock.get).return_value = Client(
+            id=client_id,
+            name=self.faker.company(),
+            email_incidents=self.faker.email(),
+        )
+
+        incident_repo_mock = Mock(IncidentRepository)
+        cast(Mock, incident_repo_mock.get_all_by_client).return_value = iter(incidents)
+        cast(Mock, incident_repo_mock.get_history).side_effect = lambda client_id, incident_id: incident_history[incident_id]  # noqa: ARG005
+
+        with (
+            self.app.container.client_repo.override(client_repo_mock),
+            self.app.container.incident_repo.override(incident_repo_mock),
+        ):
+            resp = self.call_incidents_by_client(client_id)
+
+        self.assertEqual(resp.status_code, 200)
+        resp_data = json.loads(resp.get_data())
+
+        expected_data = []
+        for incident in incidents:
+            history_entries = incident_history[incident.id]
+            incident_dict = {
+                'id': incident.id,
+                'name': incident.name,
+                'channel': incident.channel,
+                'reported_by': incident.reported_by,
+                'created_by': incident.created_by,
+                'assigned_to': incident.assigned_to,
+                'history': [
+                    {
+                        'seq': entry.seq,
+                        'date': entry.date.isoformat().replace('+00:00', 'Z'),
+                        'action': entry.action,
+                        'description': entry.description,
+                    }
+                    for entry in history_entries
+                ],
+            }
+            expected_data.append(incident_dict)
+
+        self.assertEqual(resp_data, expected_data)
