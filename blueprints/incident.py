@@ -9,6 +9,7 @@ from flask.views import MethodView
 from containers import Container
 from models import HistoryEntry, Incident, User
 from repositories import EmployeeRepository, IncidentRepository, UserRepository
+from repositories.client import ClientRepository
 
 from .util import class_route, error_response, is_valid_uuid4, json_response, requires_token
 
@@ -211,3 +212,27 @@ class IncidentDetail(MethodView):
         history = incident_repo.get_history(client_id=token['cid'], incident_id=incident_id)
 
         return json_response(self.incident_to_dict(incident, list(history)), 200)
+
+
+@class_route(blp, '/api/v1/clients/<client_id>/incidents')
+class IncidentsByClient(MethodView):
+    init_every_request = False
+
+    def get(
+            self,
+            client_id: str,
+            incident_repo: IncidentRepository = Provide[Container.incident_repo],
+            client_repo: ClientRepository = Provide[Container.client_repo],
+    ) -> Response:
+        # TODO: Implementar a lógica para retornar os incidentes de un cliente
+        client = client_repo.get(client_id)
+        if client is None:
+            return error_response('Client not found.', 404)
+
+        client_json = {
+            'id': client.id,
+            'name': client.name
+        }
+
+        return json_response(client_json, 200)
+
