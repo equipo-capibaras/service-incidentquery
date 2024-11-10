@@ -101,3 +101,12 @@ class FirestoreIncidentRepository(IncidentRepository):
 
         for doc in docs:
             yield self.doc_to_history_entry(doc)
+
+    def get_all_by_client(self, client_id: str) -> Generator[Incident, None, None]:
+        client_ref = self.db.collection('clients').document(client_id)
+        incidents_ref = cast(CollectionReference, client_ref.collection('incidents'))
+        query = incidents_ref.order_by('last_modified', direction='DESCENDING')
+
+        docs = query.stream()
+        for doc in docs:
+            yield self.doc_to_incident(doc)
