@@ -7,7 +7,7 @@ from flask import Blueprint, Response, request
 from flask.views import MethodView
 
 from containers import Container
-from models import HistoryEntry, Incident, User
+from models import Action, HistoryEntry, Incident, User
 from repositories import EmployeeRepository, IncidentRepository, UserRepository
 from repositories.client import ClientRepository
 
@@ -81,7 +81,7 @@ class EmployeeIncidents(MethodView):
                 'email': user_reported_by.email,
             },
             'filingDate': history[0].date.isoformat().replace('+00:00', 'Z'),
-            'status': history[-1].action,
+            'status': history[-1].action if history[-1].action != Action.AI_RESPONSE else history[-2].action,
         }
 
     @requires_token

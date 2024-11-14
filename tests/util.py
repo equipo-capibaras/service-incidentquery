@@ -32,7 +32,7 @@ def create_random_history_entry(
         incident_id=incident_id or cast(str, faker.uuid4()),
         client_id=client_id or cast(str, faker.uuid4()),
         date=faker.past_datetime(tzinfo=UTC),
-        action=faker.random_element(list(Action)),
+        action=faker.random_element([Action.CREATED, Action.ESCALATED, Action.CLOSED]),
         description=faker.text(),
         seq=seq,
     )
