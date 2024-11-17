@@ -8,7 +8,7 @@ from unittest_parametrize import ParametrizedTestCase, parametrize
 from werkzeug.test import TestResponse
 
 from app import create_app
-from models import Client, Employee, HistoryEntry, InvitationStatus, Role, User
+from models import Action, Client, Employee, HistoryEntry, InvitationStatus, Role, User
 from repositories import EmployeeRepository, IncidentRepository, UserRepository
 from repositories.client import ClientRepository
 from tests.util import create_random_history_entry, create_random_incident
@@ -153,8 +153,10 @@ class TestIncident(ParametrizedTestCase):
         for incident in incidents:
             incident_history[incident.id] = [
                 create_random_history_entry(self.faker, seq=i, client_id=incident.client_id, incident_id=incident.id)
-                for i in range(3)
+                for i in range(4)
             ]
+
+        incident_history[incidents[0].id][-1].action = Action.AI_RESPONSE
 
         user_repo_mock = Mock(UserRepository)
         cast(Mock, user_repo_mock.get).return_value = user
