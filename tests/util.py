@@ -3,7 +3,7 @@ from typing import cast
 
 from faker import Faker
 
-from models import Action, Channel, HistoryEntry, Incident
+from models import Action, Channel, HistoryEntry, Incident, Risk
 
 
 def create_random_incident(
@@ -22,6 +22,7 @@ def create_random_incident(
         reported_by=reported_by or cast(str, faker.uuid4()),
         created_by=created_by or cast(str, faker.uuid4()),
         assigned_to=assigned_to or cast(str, faker.uuid4()),
+        risk=faker.random_element(list(Risk)),
     )
 
 

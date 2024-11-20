@@ -487,6 +487,7 @@ class TestIncident(ParametrizedTestCase):
                     }
                     for entry in history_entries
                 ],
+                'risk': incident.risk,
             }
             expected_data.append(incident_dict)
 
