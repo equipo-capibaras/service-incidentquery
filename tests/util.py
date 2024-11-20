@@ -22,7 +22,7 @@ def create_random_incident(
         reported_by=reported_by or cast(str, faker.uuid4()),
         created_by=created_by or cast(str, faker.uuid4()),
         assigned_to=assigned_to or cast(str, faker.uuid4()),
-        risk=faker.random_element(list(Risk)),
+        risk=cast(Risk, faker.random_element(list(Risk))),
     )
 
 
