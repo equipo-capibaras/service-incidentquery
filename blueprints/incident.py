@@ -82,6 +82,7 @@ class EmployeeIncidents(MethodView):
             },
             'filingDate': history[0].date.isoformat().replace('+00:00', 'Z'),
             'status': history[-1].action if history[-1].action != Action.AI_RESPONSE else history[-2].action,
+            'risk': incident.risk,
         }
 
     @requires_token
@@ -193,6 +194,7 @@ class IncidentDetail(MethodView):
                 'role': employee_assigned_to.role,
             },
             'history': [history_to_dict(x) for x in history],
+            'risk': incident.risk,
         }
 
     @requires_token
@@ -240,6 +242,7 @@ class IncidentsByClient(MethodView):
                 'created_by': incident.created_by,
                 'assigned_to': incident.assigned_to,
                 'history': [history_to_dict(entry) for entry in history],
+                'risk': incident.risk,
             }
             resp.append(incident_dict)
 
